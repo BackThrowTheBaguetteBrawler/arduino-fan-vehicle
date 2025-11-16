@@ -3,65 +3,111 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fan Speed Control</title>
+  <title>Dual Fan Speed Control</title>
   <style>
-    body { font-family: Arial; text-align: center; padding: 2rem; background: #f4f4f4; }
-    .btn { 
-      font-size: 1.5rem; padding: 1rem 1.5rem; margin: 0.5rem;
-      background: #007bff; color: white; border: none; border-radius: 8px;
-      cursor: pointer; width: 80px;
-    }
-    .btn:hover { background: #0056b3; }
-    .btn.stop { background: #dc3545; }
-    .btn.stop:hover { background: #b02a37; }
-    .btn.full { background: #28a745; }
-    .btn.full:hover { background: #218838; }
-    #status { margin-top: 1rem; font-size: 1.2rem; color: #333; }
-    .keys { margin-top: 2rem; font-size: 1rem; color: #666; }
+    body {font-family:Arial;text-align:center;padding:2rem;background:#f4f4f4;}
+    .fan {display:inline-block;margin:1rem;vertical-align:top;width:45%;}
+    .btn {font-size:1.5rem;padding:1rem 1.5rem;margin:0.5rem;
+          background:#007bff;color:white;border:none;border-radius:8px;
+          cursor:pointer;width:80px;}
+    .btn:hover {background:#0056b3;}
+    .btn.stop {background:#dc3545;}
+    .btn.stop:hover {background:#b02a37;}
+    .btn.full {background:#28a745;}
+    .btn.full:hover {background:#218838;}
+    #status {margin-top:1rem;font-size:1.2rem;color:#333;}
+    .keys {margin-top:2rem;font-size:1rem;color:#666;}
   </style>
 </head>
 <body>
-  <h1>Fan Speed Control</h1>
-  <p>Click buttons or press keys: <strong>0–9, f, s</strong></p>
+  <h1>Dual Fan Speed Control</h1>
 
-  <div>
-    <button class="btn stop"   onclick="send('s')">S<br>Stop</button>
-    <button class="btn"        onclick="send('1')">1<br>~11%</button>
-    <button class="btn"        onclick="send('2')">2<br>~20%</button>
-    <button class="btn"        onclick="send('3')">3<br>~30%</button>
-    <button class="btn"        onclick="send('4')">4<br>~40%</button>
-    <button class="btn"        onclick="send('5')">5<br>50%</button>
-    <button class="btn"        onclick="send('6')">6<br>~60%</button>
-    <button class="btn"        onclick="send('7')">7<br>~70%</button>
-    <button class="btn"        onclick="send('8')">8<br>~80%</button>
-    <button class="btn"        onclick="send('9')">9<br>~90%</button>
-    <button class="btn full"   onclick="send('f')">F<br>Full</button>
+  <!-- ==================== FAN A (Pin 11) ==================== -->
+  <div class="fan">
+    <h2>Fan A (Pin 11)</h2>
+    <p>Keys: <strong>0–9, f = full, s = stop</strong></p>
+    <div>
+      <button class="btn stop"   onclick="send('a','s')">S<br>Stop</button>
+      <button class="btn"        onclick="send('a','1')">1<br>~11%</button>
+      <button class="btn"        onclick="send('a','2')">2<br>~20%</button>
+      <button class="btn"        onclick="send('a','3')">3<br>~30%</button>
+      <button class="btn"        onclick="send('a','4')">4<br>~40%</button>
+      <button class="btn"        onclick="send('a','5')">5<br>50%</button>
+      <button class="btn"        onclick="send('a','6')">6<br>~60%</button>
+      <button class="btn"        onclick="send('a','7')">7<br>~70%</button>
+      <button class="btn"        onclick="send('a','8')">8<br>~80%</button>
+      <button class="btn"        onclick="send('a','9')">9<br>~90%</button>
+      <button class="btn full"   onclick="send('a','f')">F<br>Full</button>
+    </div>
+  </div>
+
+  <!-- ==================== FAN B (Pin 10) ==================== -->
+  <div class="fan">
+    <h2>Fan B (Pin 10)</h2>
+    <p>Keys: <strong>q = stop, w–p = 10–90%, [ = full</strong></p>
+    <div>
+      <button class="btn stop"   onclick="send('b','s')">Q<br>Stop</button>
+      <button class="btn"        onclick="send('b','1')">W<br>~10%</button>
+      <button class="btn"        onclick="send('b','2')">E<br>~20%</button>
+      <button class="btn"        onclick="send('b','3')">R<br>~30%</button>
+      <button class="btn"        onclick="send('b','4')">T<br>~40%</button>
+      <button class="btn"        onclick="send('b','5')">Y<br>50%</button>
+      <button class="btn"        onclick="send('b','6')">U<br>~60%</button>
+      <button class="btn"        onclick="send('b','7')">I<br>~70%</button>
+      <button class="btn"        onclick="send('b','8')">O<br>~80%</button>
+      <button class="btn"        onclick="send('b','9')">P<br>~90%</button>
+      <button class="btn full"   onclick="send('b','f')">[ <br>Full</button>
+    </div>
   </div>
 
   <div id="status">Ready. Press keys or click buttons.</div>
-  <div class="keys">Keyboard: 0–9, f = full, s = stop</div>
+  <div class="keys">
+    Fan A: 0–9, f = full, s = stop  |  Fan B: q = stop, w–p = 10–90%, [ = full
+  </div>
 
+  <!-- ==================== SSE Live Feedback ==================== -->
   <script>
-    function send(key) {
-      fetch(`/cmd/${key}`)
+    const statusEl = document.getElementById('status');
+    const evtSource = new EventSource('/stream');
+    evtSource.onmessage = function(e) {
+      if (e.data) {
+        statusEl.textContent = `Live: ${e.data}`;
+      }
+    };
+    evtSource.onerror = function() {
+      statusEl.textContent = 'SSE connection lost...';
+    };
+  </script>
+
+  <!-- ==================== Command Sender ==================== -->
+  <script>
+    function send(fan, key) {
+      fetch(`/cmd/${fan}/${key}`)
         .then(r => r.json())
         .then(data => {
           if (data.status === 'ok') {
-            document.getElementById('status').textContent = `Sent: ${key.toUpperCase()} → Fan updated`;
+            statusEl.textContent = `Sent: ${data.fan}${data.key} → Fan updated`;
           }
         })
         .catch(() => {
-          document.getElementById('status').textContent = 'Error: Is Arduino connected?';
+          statusEl.textContent = 'Error: Is Arduino connected?';
         });
     }
 
-    // Keyboard control
-    document.addEventListener('keydown', (e) => {
+    // ------------------- Keyboard mapping -------------------
+    const mapA = {               // Fan A – unchanged
+      '0':'0','1':'1','2':'2','3':'3','4':'4','5':'5',
+      '6':'6','7':'7','8':'8','9':'9','f':'f','s':'s'
+    };
+    const mapB = {               // Fan B – NEW layout
+      'q':'s', 'w':'1','e':'2','r':'3','t':'4','y':'5',
+      'u':'6','i':'7','o':'8','p':'9','[':'f'
+    };
+
+    document.addEventListener('keydown', e => {
       const k = e.key.toLowerCase();
-      if ('0123456789fs'.includes(k)) {
-        e.preventDefault();
-        send(k);
-      }
+      if (k in mapA) { e.preventDefault(); send('a', mapA[k]); }
+      else if (k in mapB) { e.preventDefault(); send('b', mapB[k]); }
     });
   </script>
 </body>
